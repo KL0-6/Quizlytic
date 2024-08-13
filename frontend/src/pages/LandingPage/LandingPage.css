@@ -1,0 +1,24 @@
+@keyframes rotate-gradient
+{
+	0% 
+	{
+		background-position: 0% 50%;
+	}
+	50% 
+	{
+		background-position: 100% 50%;
+	}
+	100% 
+	{
+		background-position: 0% 50%;
+	}
+}
+
+.animate-rotate-gradient 
+{
+	background: linear-gradient(270deg, #38A169, #2B6CB0, #319795, #38A169);
+	background-size: 400% 400%;
+	animation: rotate-gradient 10s ease infinite;
+	-webkit-background-clip: text;
+	color: transparent;
+}

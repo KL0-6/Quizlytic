@@ -1,0 +1,4 @@
+/.uploads
+/.vscode
+/backend/build
+backend/config.json
