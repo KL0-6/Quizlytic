@@ -25,6 +25,7 @@ add_executable(AIFlashcardBackend
 
     routes/test/test.cpp
     routes/chat/chat.cpp
+    routes/clerk/usercreated/usercreated.cpp
 )
 
 set_target_properties(AIFlashcardBackend PROPERTIES CXX_STANDARD 17)

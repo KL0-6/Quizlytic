@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { z } from "zod";
+import { useUser } from '@clerk/clerk-react';
 
 const flashcardSchema = z.object({
 	title: z.string().min(1, "Title is required"),
@@ -14,6 +15,9 @@ interface Props
 
 const CreateFlashcardModal: React.FC<Props> = ({ onClose }) => 
 {
+	const { user } = useUser();
+    const userId = user ? user.id : null;
+
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
 	const [answer, setAnswer] = useState("");
@@ -38,7 +42,7 @@ const CreateFlashcardModal: React.FC<Props> = ({ onClose }) =>
 			setErrors(null);
 
 			try 
-			{
+			{				
 				const response = await fetch("http://localhost:8848/chat", 
 				{
 					method: "POST",
@@ -47,7 +51,8 @@ const CreateFlashcardModal: React.FC<Props> = ({ onClose }) =>
 						"Content-Type": "application/json"
 					},
 					body: JSON.stringify({
-						data: description + " with a difficulty of " + difficulty
+						data: description + " with a difficulty of " + difficulty,
+						clerkUserId: userId
 					})
 				});
 

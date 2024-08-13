@@ -51,32 +51,6 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    dbClient->execSqlAsync("SELECT * FROM users WHERE user_hash = ?", 
-        [](const drogon::orm::Result &result)
-        {
-            if (result.size() > 0)
-            {
-                std::cout << "User found!" << std::endl;
-                for (const auto &row : result)
-                {
-                    std::cout << "User ID: " << row["user_id"].as<std::string>() << std::endl;
-                    std::cout << "User Hash: " << row["user_hash"].as<std::string>() << std::endl;
-                    std::cout << "Is Premium: " << row["is_premium"].as<int>() << std::endl;
-                    std::cout << "Created At: " << row["created_at"].as<std::string>() << std::endl;
-                }
-            }
-            else
-            {
-                std::cout << "No user found with hash: " << std::endl;
-            }
-        },
-        [](const drogon::orm::DrogonDbException &e)
-        {
-            std::cerr << "Async error: " << e.base().what() << std::endl;
-        }, 
-        "user1_hash"
-    );
-
     drogon::app().addListener(drogonIp.value(), drogonPort.value()).setThreadNum(drogonThreads.value()).run();
 
     return 0;

@@ -2,6 +2,8 @@
 #include <cpr/cpr.h>
 #include <nlohmann/json.hpp>
 
+#include "../../database/client/client.h"
+
 std::string apiKey = "";
 std::string endpoint = "https://api.groq.com/openai/v1/chat/completions"; // Updated to match your example
 
@@ -19,8 +21,7 @@ HttpResponsePtr generateError(const char* const message, HttpStatusCode statusCo
     response->addHeader("Access-Control-Allow-Origin", "*");
     response->addHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     response->addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-
+    
     response->setStatusCode(statusCode);
 
     return response;
@@ -43,14 +44,28 @@ void ChatCtrl::asyncHandleHttpRequest(const HttpRequestPtr& request, std::functi
     std::shared_ptr<Json::Value> body = request->getJsonObject();
 
     // ERROR: No body, or invalid body
-    if(!body || body->isNull() || !body->isMember("data") )
+    if(!body || body->isNull() || !body->isMember("data") || !body->isMember("clerkUserId"))
         return callback(generateError("Invalid JSON Body!"));
 
     std::string userInput = body->get("data", "").asString();
+    std::string clerkUserId = body->get("clerkUserId", "").asString();
 
-    if(userInput.empty())
-        return callback(generateError("Input is empty!"));
+    if(userInput.empty() || clerkUserId.empty())
+        return callback(generateError("Input or ID is empty!"));
 
+    try
+    {
+        const auto& dbClient = backend::getDbClient();
+        drogon::orm::Result result = dbClient->execSqlSync("SELECT * FROM users WHERE clerkUserId = ?", clerkUserId);
+
+        if (result.empty())
+            return callback(generateError("clerkUserId not found in the database!", drogon::HttpStatusCode::k404NotFound));
+    }
+    catch(const std::exception& e)
+    {
+        return callback(generateError("Error connecting to database!"));
+    }
+    
     std::string payload = R"({
         "max_tokens": 1024,
         "messages": [
