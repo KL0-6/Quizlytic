@@ -65,14 +65,14 @@ void ChatCtrl::asyncHandleHttpRequest(const HttpRequestPtr& request, std::functi
         int flashcardCount = result[0]["flashcardCount"].as<int>();
         bool isPremium = result[0]["isPremium"].as<bool>();
 
-        if (!isPremium && flashcardCount >= 2)
+        if (!isPremium && flashcardCount >= 5)
             return callback(generateError("Maximum number of flashcards reached!", drogon::HttpStatusCode::k403Forbidden));
 
         std::string payload = R"({
-            "max_tokens": 1024,
+            "max_tokens": 2048,
             "messages": [
                 {
-                    "content": "You are an AI assistant specifically designed to generate educational flashcards based on user requests. Each flashcard should be formatted as: [ { question: \"General concept or fact\", answer: \"Explanation or definition\" } ]. Remember, you are generating flashcards. Avoid specific questions, generate content that is broad and conceptual. Provide a maximum of 15 flashcards per request. If the user does not specify a number of flashcards, generate exactly 5 flashcards by default. Your responses must strictly adhere to the educational topic requested and avoid any inappropriate or NSFW content. Return only the JSON array of flashcards. Do not include any additional text, explanations, or content outside of the JSON format.",
+                    "content": "You are an AI assistant specialized in generating educational flashcards. Your task is to generate flashcards in JSON format. Each flashcard should be structured as: {\"question\": \"General concept or fact\", \"answer\": \"Explanation or definition\"}. Please adhere to the following guidelines: 1. Ensure the JSON format is strictly followed with no additional text or explanations outside the JSON array. 2. Before returning the response, **validate** that the output is syntactically correct JSON. 3. If the output is not valid JSON, return an empty JSON array instead: []. 4. Do not include any additional text, comments, or apologies before, after, or within the JSON array. 5. Generate a maximum of 15 flashcards per request. If the number of flashcards is not specified, generate exactly 5 flashcards by default. 6. The JSON response should be correctly formatted, properly escaped, and syntactically valid. 7. If you make any mistakes or encounter issues, do not attempt to correct them within the response. Simply return the JSON array with the correct flashcards or an empty array if the JSON is invalid. Avoid quiz-style questions and only provide broad, conceptual content suitable for flashcards. Ensure that no undefined values or syntax errors are present in the JSON output.",
                     "role": "system"
                 },
                 {
@@ -83,8 +83,8 @@ void ChatCtrl::asyncHandleHttpRequest(const HttpRequestPtr& request, std::functi
             "model": "llama3-8b-8192",
             "stop": null,
             "stream": false,
-            "temperature": 0.7,
-            "top_p": 0.9
+            "temperature": 0.5,
+            "top_p": 0.5
         })";
 
         drogon::app().getLoop()->queueInLoop([this, dbClient, payload, title, difficulty, description, clerkUserId, callback]() 
@@ -104,6 +104,18 @@ void ChatCtrl::asyncHandleHttpRequest(const HttpRequestPtr& request, std::functi
                     if (jsonResponse.contains("choices") && jsonResponse["choices"].is_array() && !jsonResponse["choices"].empty())
                     {
                         std::string responseText = jsonResponse["choices"][0]["message"]["content"].get<std::string>();
+
+                        // Try to parse the input, if it doesn't work, it isn't valid JSON, error.
+                        try 
+                        {
+                            nlohmann::json test = nlohmann::json::parse(responseText);
+                        } 
+                        catch (const nlohmann::json::parse_error& e) 
+                        {
+                            std::printf("API returned invalid JSON! %s\n\n", responseText.c_str());
+
+                            return callback(generateError("API returned invalid JSON!", drogon::HttpStatusCode::k500InternalServerError));
+                        }
 
                         const std::string& datab64 = base64::encode(responseText, responseText.size());
                         const std::string& dataHash = cryptography::hash(datab64.c_str(), datab64.size());
