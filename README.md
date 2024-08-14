@@ -64,23 +64,27 @@ ninja
 Once the backend is built, it requires a json file path to be passed as a command line argument. This file should contain the necassary configuration settings for Drogon, Groq, and the Database. Here is an example of how it should look like:
 ```json
 {
+{
+    "db_clients":
+    {
+        "default":
+        {
+            "rdbms": "mysql",
+            "host": "localhost",
+            "port": 3306,
+            "dbname": "YOUR_DB_NAME",
+            "user": "USERNAME",
+            "passwd": "PASSWORD",
+            "connection_number": 10
+        }
+    },
     "env":
     {
         "drogonIp": "127.0.0.1",
         "drogonPort": 8848,
         "drogonThreads": 0,
 
-        "groqKey": "GROQ_KEY_HERE",
-
-        "db": 
-        {
-            "type": "mysql",
-            "host": "127.0.0.1",
-            "port": 3306,
-            "username": "USERNAME",
-            "password": "PASSWORD",
-            "connNum": 4
-        }
+        "groqKey": "GROQ_KEY_HERE"
     }
 }
 ```
