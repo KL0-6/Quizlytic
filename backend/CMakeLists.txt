@@ -20,11 +20,12 @@ add_executable(AIFlashcardBackend
     main.cpp
 
     common/env/env.cpp
-
-    database/client/client.cpp
+    common/base64/base64.cpp
+    common/cryptography/cryptography.cpp
 
     routes/test/test.cpp
     routes/chat/chat.cpp
+    routes/getflashcards/getflashcards.cpp
     routes/clerk/usercreated/usercreated.cpp
 )
 

@@ -16,19 +16,26 @@ enum Page
 	View,
 }
 
+interface FlashcardSetData 
+{
+    title: string;
+    data: string;
+}
+
 function App() 
 {
 	const [currentPage, setCurrentPage] = useState<Page>(Page.Landing);
-	const [selectedSetId, setSelectedSetId] = useState<number | null>(null);
+	const [selectedSetData, setSelectedSetData] = useState<FlashcardSetData | null>(null);
 
 	const navigateToFlashcardSelection = () => 
 	{
 		setCurrentPage(Page.Select);
 	};
 
-	const handleSelectSet = (setId: number) => 
+	const handleSelectSet = (title: string, data: string) => 
 	{
-		setSelectedSetId(setId);
+		setSelectedSetData({ title, data });
+
 		setCurrentPage(Page.View);
 	};
 
@@ -53,8 +60,8 @@ function App()
 				/>
 			)}
 
-			{currentPage === Page.View && selectedSetId !== null && (
-				<FlashcardViewer/>
+			{currentPage === Page.View && selectedSetData !== null && (
+				<FlashcardViewer title={selectedSetData.title} data={selectedSetData.data} onBack={navigateToFlashcardSelection} />
 			)}
 		</>
 	);

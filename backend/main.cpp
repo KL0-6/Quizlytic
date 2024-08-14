@@ -1,4 +1,3 @@
-#include "database/client/client.h"
 #include "routes/chat/chat.h"
 #include "common/env/env.h"
 #include <drogon/drogon.h>
@@ -38,20 +37,7 @@ int main(int argc, char* argv[])
 
     LOG_INFO << "Server running on " << drogonIp.value() << ":" << drogonPort.value();
 
-    const auto& dbClient = backend::getDbClient();
-    
-    try
-    {
-        dbClient->execSqlSync("USE flashcards;");
-    }
-    catch (const drogon::orm::DrogonDbException &e)
-    {   
-        LOG_ERROR << "Failed to connect to testdb!";
-
-        return 0;
-    }
-
-    drogon::app().addListener(drogonIp.value(), drogonPort.value()).setThreadNum(drogonThreads.value()).run();
+    drogon::app().loadConfigFile(envPath).addListener(drogonIp.value(), drogonPort.value()).setThreadNum(drogonThreads.value()).run();
 
     return 0;
 }

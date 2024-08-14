@@ -1,33 +1,54 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Modal from "../../components/Modal/Modal";
 import CreateFlashcard from "../CreateFlashcard/CreateFlashcard";
 import { useUser, SignedIn, SignedOut, SignIn } from '@clerk/clerk-react';
 
 interface Props 
 {
-    onSelectSet: (setId: number) => void;
+    onSelectSet: (title: string, data: string) => void;
 }
 
-const flashcardSets = [
-    { id: 1, name: "Math Basics", description: "Basic math operations." },
-    { id: 2, name: "Science Facts", description: "Interesting science trivia." },
-    { id: 3, name: "History Dates", description: "Important historical events." },
-    { id: 4, name: "World Geography", description: "Capitals and countries." },
-    { id: 5, name: "English Grammar", description: "Grammar rules and exceptions." },
-    { id: 6, name: "Biology 101", description: "Introduction to biology concepts." },
-    { id: 7, name: "Physics Formulas", description: "Key physics equations and principles." },
-    { id: 8, name: "Chemistry Elements", description: "Periodic table and element facts." },
-    { id: 9, name: "Literature Classics", description: "Famous works and authors." },
-    { id: 10, name: "Art History", description: "Movements and influential artists." },
-    { id: 11, name: "Programming Basics", description: "Fundamentals of coding." },
-    { id: 12, name: "Advanced Algebra", description: "Complex algebraic equations." },
-];
-
 const FlashcardSetSelection: React.FC<Props> = ({ onSelectSet }) => 
-    {
+{
     const [searchTerm, setSearchTerm] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { user } = useUser();
+
+    const [flashcardSets, setFlashcardSets] = useState<any[]>([]);
+
+    useEffect(() => 
+    {
+        if (user) 
+        {
+            fetch(`http://localhost:8848/getflashcards?userId=${user.id}`).then((response) => 
+            {
+                if (!response.ok) 
+                    throw new Error('Failed to fetch flashcards');
+
+                return response.json();
+            })
+            .then((data) => 
+            {
+                const fetchedSets = data.map((flashcard: any) => 
+                {
+                    console.log(flashcard);
+
+                    return {
+                        hash: flashcard.hash,
+                        name: flashcard.title,
+                        description: flashcard.description,
+                        data: flashcard.data
+                    };
+                });
+
+                setFlashcardSets(fetchedSets);
+            })
+            .catch((error) => 
+            {
+                console.error("Error fetching flashcards:", error);
+            });
+        }
+    }, [user]);
 
     const filteredSets = flashcardSets.filter((set) =>
         set.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -35,6 +56,20 @@ const FlashcardSetSelection: React.FC<Props> = ({ onSelectSet }) =>
 
     const openModal = () => setIsModalOpen(true);
     const closeModal = () => setIsModalOpen(false);
+
+    const onModalSubmit = (title: string, description: string, hash: string, data: string) => 
+    {
+        const newSet = 
+        {
+            hash: hash, 
+            name: title,
+            description: description,
+            data: data
+        };
+
+        setFlashcardSets([...flashcardSets, newSet]);
+        setIsModalOpen(false);
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black text-white flex flex-col items-center pt-20 md:pt-24 p-4 md:p-6">
@@ -59,7 +94,7 @@ const FlashcardSetSelection: React.FC<Props> = ({ onSelectSet }) =>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
                         {filteredSets.length > 0 ? (
                             filteredSets.map((set) => (
-                                <div key={set.id} className="p-6 bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-700 flex flex-col justify-between h-40" onClick={() => onSelectSet(set.id)}>
+                                <div key={set.hash} className="p-6 bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-700 flex flex-col justify-between h-40" onClick={() => onSelectSet(set.name, set.data)}>
                                     <h3 className="text-lg font-semibold">{set.name}</h3>
                                     <p className="text-gray-400">{set.description}</p>
                                 </div>
@@ -71,7 +106,7 @@ const FlashcardSetSelection: React.FC<Props> = ({ onSelectSet }) =>
                 </div>
 
                 <Modal isOpen={isModalOpen}>
-                    <CreateFlashcard onClose={closeModal} />
+                    <CreateFlashcard onClose={closeModal} onSubmit={onModalSubmit} />
                 </Modal>
             </SignedIn>
         </div>

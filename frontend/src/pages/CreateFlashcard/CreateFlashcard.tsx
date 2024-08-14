@@ -3,7 +3,7 @@ import { z } from "zod";
 import { useUser } from '@clerk/clerk-react';
 
 const flashcardSchema = z.object({
-	title: z.string().min(1, "Title is required"),
+	title: z.string().min(1, "Title is required").max(50, "Your title is too long! Provide a brief title!"),
 	description: z.string().min(1, "Description is required").max(50, "Your description is too long! Provide a brief description!"),
 	difficulty: z.enum(["Easy", "Medium", "Hard"]),
 });
@@ -11,16 +11,16 @@ const flashcardSchema = z.object({
 interface Props 
 {
 	onClose: () => void;
+	onSubmit: (name: string, description: string, hash: string, data: string) => void;
 }
 
-const CreateFlashcardModal: React.FC<Props> = ({ onClose }) => 
+const CreateFlashcardModal: React.FC<Props> = ({ onClose, onSubmit }) => 
 {
 	const { user } = useUser();
     const userId = user ? user.id : null;
 
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
-	const [answer, setAnswer] = useState("");
 	const [difficulty, setDifficulty] = useState(50);
 	const [errors, setErrors] = useState<z.inferFlattenedErrors<typeof flashcardSchema> | null>(null);
 
@@ -51,7 +51,9 @@ const CreateFlashcardModal: React.FC<Props> = ({ onClose }) =>
 						"Content-Type": "application/json"
 					},
 					body: JSON.stringify({
-						data: description + " with a difficulty of " + difficulty,
+						title: title,
+						difficulty: difficulty,
+						data: description,
 						clerkUserId: userId
 					})
 				});
@@ -61,11 +63,12 @@ const CreateFlashcardModal: React.FC<Props> = ({ onClose }) =>
 					throw new Error("Network response was not ok");
 				}
 
-				const data = await response.json();
+				const returnJson = await response.json();
 
-				console.log(data);
+				const hash = returnJson["hash"];
+				const data = returnJson["data"];
 
-				setAnswer(data.answer);
+				onSubmit(title, description, hash, data);
 			} 
 			catch (error) 
 			{
