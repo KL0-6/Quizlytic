@@ -1,70 +1,61 @@
 import React, { useState } from "react";
+import { BrowserRouter as Router, Route, Routes, useNavigate, Link } from "react-router-dom";
 import "./App.css";
 
 import LandingPage from "./pages/LandingPage/LandingPage";
-import CreateFlashcard from "./pages/CreateFlashcard/CreateFlashcard";
 import FlashcardViewer from "./pages/FlashcardViewer/FlashcardViewer";
 import FlashcardSetSelection from "./pages/FlashcardSetSelection/FlashcardSetSelection";
 
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
+import { SignedIn, UserButton } from "@clerk/clerk-react";
 
-enum Page 
-{
-	Landing,
-	Create,
-	Select,
-	View,
-}
-
-interface FlashcardSetData 
-{
+interface FlashcardSetData {
     title: string;
     data: string;
 }
 
-function App() 
-{
-	const [currentPage, setCurrentPage] = useState<Page>(Page.Landing);
-	const [selectedSetData, setSelectedSetData] = useState<FlashcardSetData | null>(null);
+const App: React.FC = () => {
+    const [selectedSetData, setSelectedSetData] = useState<FlashcardSetData | null>(null);
+    const navigate = useNavigate();
 
-	const navigateToFlashcardSelection = () => 
-	{
-		setCurrentPage(Page.Select);
-	};
+    const handleSelectSet = (title: string, data: string) => {
+        setSelectedSetData({ title, data });
+        navigate(`/view`);
+    };
 
-	const handleSelectSet = (title: string, data: string) => 
-	{
-		setSelectedSetData({ title, data });
+    return (
+        <>
+            <header className="absolute top-0 left-0 right-0 flex justify-between items-center p-4 z-10">
+                <div className="flex items-center space-x-4">
+                    <div className="text-lg font-bold text-white">Quizlytic</div>
+                    <Link to="/" className="text-white hover:text-gray-300">Home</Link>
+                </div>
+                <div className="ml-auto">
+                    <SignedIn>
+                        <UserButton />
+                    </SignedIn>
+                </div>
+            </header>
 
-		setCurrentPage(Page.View);
-	};
+            <Routes>
+                <Route path="/" element={<LandingPage onClick={() => navigate("/select")} />} />
+                <Route path="/select" element={<FlashcardSetSelection onSelectSet={handleSelectSet} />} />
+                
+                <Route path="/view" element={
+                    <FlashcardViewer 
+                        title={selectedSetData?.title || ''} 
+                        data={selectedSetData?.data || ''} 
+                        onBack={() => navigate('/select')}
+                    />
+                }/>
+            </Routes>
+        </>
+    );
+};
 
-	return (
-		<>
-			<header className="absolute top-0 left-0 right-0 flex justify-between items-center p-4 z-10">
-				<div className="text-lg font-bold text-white">Quizlytic</div>
-				<div>
-					<SignedIn>
-						<UserButton/>
-					</SignedIn>
-				</div>
-			</header>
+const AppWrapper = () => (
+    <Router basename="/flashcards">
+        <App />
+    </Router>
+);
 
-			{currentPage === Page.Landing && (
-				<LandingPage onClick={navigateToFlashcardSelection}/>
-			)}
-
-			{currentPage === Page.Select && (
-				<FlashcardSetSelection 
-					onSelectSet={handleSelectSet} 
-				/>
-			)}
-
-			{currentPage === Page.View && selectedSetData !== null && (
-				<FlashcardViewer title={selectedSetData.title} data={selectedSetData.data} onBack={navigateToFlashcardSelection} />
-			)}
-		</>
-	);
-}
-
-export default App;
+export default AppWrapper;

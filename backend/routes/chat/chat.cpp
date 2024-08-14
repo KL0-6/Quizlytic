@@ -1,7 +1,6 @@
 #include "chat.h"
 #include <cpr/cpr.h>
 #include <nlohmann/json.hpp>
-
 #include "../../common/base64/base64.h"
 #include "../../common/cryptography/cryptography.h"
 
@@ -62,6 +61,12 @@ void ChatCtrl::asyncHandleHttpRequest(const HttpRequestPtr& request, std::functi
     {
         if (result.empty()) 
             return callback(generateError("clerkUserId not found in the database!", drogon::HttpStatusCode::k404NotFound));
+        
+        int flashcardCount = result[0]["flashcardCount"].as<int>();
+        bool isPremium = result[0]["isPremium"].as<bool>();
+
+        if (!isPremium && flashcardCount >= 2)
+            return callback(generateError("Maximum number of flashcards reached!", drogon::HttpStatusCode::k403Forbidden));
 
         std::string payload = R"({
             "max_tokens": 1024,
@@ -103,26 +108,27 @@ void ChatCtrl::asyncHandleHttpRequest(const HttpRequestPtr& request, std::functi
                         const std::string& datab64 = base64::encode(responseText, responseText.size());
                         const std::string& dataHash = cryptography::hash(datab64.c_str(), datab64.size());
 
-                        dbClient->execSqlAsync("INSERT INTO flashcards (setHash, title, description, difficulty, data, clerkUserId) VALUES (?, ?, ?, ?, ?, ?)", 
-                        [callback, dataHash, responseText](const drogon::orm::Result &result) 
-                        {
-                            Json::Value returnData;
-                            returnData["hash"] = dataHash;
-                            returnData["data"] = responseText;
+                        dbClient->execSqlAsync(
+                            "CALL InsertFlashcardAndUpdateCount(?, ?, ?, ?, ?, ?)", 
+                            [callback, dataHash, responseText](const drogon::orm::Result &result) 
+                            {
+                                Json::Value returnData;
+                                returnData["hash"] = dataHash;
+                                returnData["data"] = responseText;
 
-                            HttpResponsePtr returnResponse = HttpResponse::newHttpJsonResponse(returnData);
-                            returnResponse->addHeader("Access-Control-Allow-Origin", "*");
-                            returnResponse->addHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-                            returnResponse->addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-                            returnResponse->setStatusCode(drogon::HttpStatusCode::k200OK);
+                                HttpResponsePtr returnResponse = HttpResponse::newHttpJsonResponse(returnData);
+                                returnResponse->addHeader("Access-Control-Allow-Origin", "*");
+                                returnResponse->addHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+                                returnResponse->addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+                                returnResponse->setStatusCode(drogon::HttpStatusCode::k200OK);
 
-                            callback(returnResponse);
-                        }, 
-                        [callback](const drogon::orm::DrogonDbException &e) 
-                        {
-                            callback(generateError("Database error while inserting flashcards!", drogon::HttpStatusCode::k500InternalServerError));
-                        },
-                        dataHash, title, description, difficulty, datab64, clerkUserId
+                                callback(returnResponse);
+                            }, 
+                            [callback](const drogon::orm::DrogonDbException &e) 
+                            {
+                                callback(generateError("Database error while inserting flashcards!", drogon::HttpStatusCode::k500InternalServerError));
+                            },
+                            dataHash, title, description, difficulty, datab64, clerkUserId
                         );
                     } 
                     else 

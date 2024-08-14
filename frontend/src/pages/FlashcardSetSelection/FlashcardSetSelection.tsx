@@ -20,7 +20,7 @@ const FlashcardSetSelection: React.FC<Props> = ({ onSelectSet }) =>
     {
         if (user) 
         {
-            fetch(`http://localhost:8848/getflashcards?userId=${user.id}`).then((response) => 
+            fetch(`https://kl0-6.com/api/flashcard/getflashcards?userId=${user.id}`).then((response) => 
             {
                 if (!response.ok) 
                     throw new Error('Failed to fetch flashcards');
@@ -31,8 +31,6 @@ const FlashcardSetSelection: React.FC<Props> = ({ onSelectSet }) =>
             {
                 const fetchedSets = data.map((flashcard: any) => 
                 {
-                    console.log(flashcard);
-
                     return {
                         hash: flashcard.hash,
                         name: flashcard.title,
@@ -88,7 +86,7 @@ const FlashcardSetSelection: React.FC<Props> = ({ onSelectSet }) =>
                 <div className="flex flex-col w-full max-w-3xl mb-12 md:mb-16 space-y-4 md:space-y-0">
                     <div className="flex flex-row items-center mb-8">
                         <input type="text" placeholder="Search flashcard sets..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-2 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 h-12"/>
-                        <button className="bg-green-600 text-white rounded-lg shadow-md hover:bg-green-500 ml-4 h-12 flex items-center justify-center px-4" onClick={openModal}>Create New Set</button>
+                        <button className="bg-green-600 text-white rounded-lg shadow-md hover:bg-green-500 ml-4 h-12 flex items-center justify-center px-4" onClick={openModal}>Create</button>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">

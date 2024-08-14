@@ -27,6 +27,7 @@ add_executable(AIFlashcardBackend
     routes/chat/chat.cpp
     routes/getflashcards/getflashcards.cpp
     routes/clerk/usercreated/usercreated.cpp
+    routes/clerk/userdeleted/userdeleted.cpp
 )
 
 set_target_properties(AIFlashcardBackend PROPERTIES CXX_STANDARD 17)

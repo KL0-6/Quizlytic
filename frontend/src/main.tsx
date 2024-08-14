@@ -12,7 +12,7 @@ if (!PUBLISHABLE_KEY)
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
-        <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
+        <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignInUrl="https://sites.kl0-6.com/flashcards" afterSignOutUrl="https://sites.kl0-6.com/flashcards">
             <App/>
         </ClerkProvider>
     </StrictMode>,

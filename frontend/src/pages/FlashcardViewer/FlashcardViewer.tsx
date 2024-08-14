@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./FlashcardViewer.css";
+import { useNavigate } from "react-router-dom";
 
 interface Flashcard
 {
@@ -19,9 +20,13 @@ const FlashcardViewer: React.FC<Props> = ({ title, data, onBack }) =>
     const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
+	const navigate = useNavigate();
 
     useEffect(() => 
 	{
+		if (!title || !data) 
+			return navigate('/select');
+		
         try 
 		{
             const parsedFlashcards: Flashcard[] = JSON.parse(data);

@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { z } from "zod";
 import { useUser } from '@clerk/clerk-react';
 
+import Notification from "../../components/Notification/Notification";
+
 const flashcardSchema = z.object({
 	title: z.string().min(1, "Title is required").max(50, "Your title is too long! Provide a brief title!"),
 	description: z.string().min(1, "Description is required").max(50, "Your description is too long! Provide a brief description!"),
@@ -24,6 +26,8 @@ const CreateFlashcardModal: React.FC<Props> = ({ onClose, onSubmit }) =>
 	const [difficulty, setDifficulty] = useState(50);
 	const [errors, setErrors] = useState<z.inferFlattenedErrors<typeof flashcardSchema> | null>(null);
 
+	const [notification, setNotification] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
 	const getDifficultyLabel = () => 
 	{
 		if (difficulty < 34) return "Easy";
@@ -43,7 +47,7 @@ const CreateFlashcardModal: React.FC<Props> = ({ onClose, onSubmit }) =>
 
 			try 
 			{				
-				const response = await fetch("http://localhost:8848/chat", 
+				const response = await fetch("https://kl0-6.com/api/flashcard/chat", 
 				{
 					method: "POST",
 					headers: {
@@ -60,7 +64,18 @@ const CreateFlashcardModal: React.FC<Props> = ({ onClose, onSubmit }) =>
 
 				if (!response.ok)
 				{
-					throw new Error("Network response was not ok");
+					const errorJson = await response.json();
+					if (errorJson.error && errorJson.error.includes("Maximum number of flashcards reached"))
+					{
+						setNotification({
+							message: "You have reached the maximum number of flashcards allowed.",
+							type: "error",
+						});
+							
+						return;
+					}
+					
+					throw new Error(errorJson.error);
 				}
 
 				const returnJson = await response.json();
@@ -105,6 +120,15 @@ const CreateFlashcardModal: React.FC<Props> = ({ onClose, onSubmit }) =>
 					<button className="px-6 py-3 bg-green-600 text-white rounded-full font-bold shadow-md hover:bg-green-500" onClick={handleSave}> Generate Flashcard</button>
 				</div>
 			</div>
+
+			{/* Render the notification if there's a message */}
+				{notification && (
+				<Notification
+					message={notification.message}
+					type={notification.type}
+					onClose={() => setNotification(null)}
+				/>
+			)}
 		</div>
 	);
 };
