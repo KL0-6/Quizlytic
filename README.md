@@ -2,6 +2,8 @@
 
 Quizlytic is a full-stack AI Flashcard application I've built to help people generate study material quickly. The app is built using modern web technologies including React, TypeScript, and Tailwind CSS, with a backend powered by Drogon and C++.
 
+You can try it out LIVE at: [sites.kl0-6.com/flashcards](https://sites.kl0-6.com/flashcards)
+
 ## Features
 
 - **AI-Powered Flashcard Creation**: Automatically generate answers to your questions using AI.
