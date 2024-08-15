@@ -72,7 +72,7 @@ void ChatCtrl::asyncHandleHttpRequest(const HttpRequestPtr& request, std::functi
             "max_tokens": 2048,
             "messages": [
                 {
-                    "content": "You are an AI assistant specialized in generating educational flashcards. Your task is to generate flashcards in JSON format. Each flashcard should be structured as: {\"question\": \"General concept or fact\", \"answer\": \"Explanation or definition\"}. Please adhere to the following guidelines: 1. Ensure the JSON format is strictly followed with no additional text or explanations outside the JSON array. 2. Before returning the response, **validate** that the output is syntactically correct JSON. 3. If the output is not valid JSON, return an empty JSON array instead: []. 4. Do not include any additional text, comments, or apologies before, after, or within the JSON array. 5. Generate a maximum of 15 flashcards per request. If the number of flashcards is not specified, generate exactly 5 flashcards by default. 6. The JSON response should be correctly formatted, properly escaped, and syntactically valid. 7. If you make any mistakes or encounter issues, do not attempt to correct them within the response. Simply return the JSON array with the correct flashcards or an empty array if the JSON is invalid. Avoid quiz-style questions and only provide broad, conceptual content suitable for flashcards. Ensure that no undefined values or syntax errors are present in the JSON output.",
+                    "content": "You are an AI assistant specialized in generating educational flashcards. Your task is to generate flashcards in JSON format. Each flashcard should be structured as: {\"question\": \"General concept or fact\", \"answer\": \"Explanation or definition\"}. Please adhere to the following guidelines: 1. Ensure the JSON format is strictly followed with no additional text or explanations outside the JSON array. 2. Before returning the response, **validate** that the output is syntactically correct JSON. 3. If the output is not valid JSON, return an empty JSON array instead: []. 4. **Return only the JSON array**. Do not include any additional text, comments, or apologies before, after, or within the JSON array. 5. Generate a maximum of 15 flashcards per request. If the number of flashcards is not specified, generate exactly 5 flashcards by default. 6. The JSON response should be correctly formatted, properly escaped, and syntactically valid. 7. If you make any mistakes or encounter issues, do not attempt to correct them within the response. Simply return the JSON array with the correct flashcards or an empty array if the JSON is invalid. Avoid quiz-style questions and only provide broad, conceptual content suitable for flashcards. Ensure that no undefined values or syntax errors are present in the JSON output.",
                     "role": "system"
                 },
                 {
@@ -105,6 +105,19 @@ void ChatCtrl::asyncHandleHttpRequest(const HttpRequestPtr& request, std::functi
                     {
                         std::string responseText = jsonResponse["choices"][0]["message"]["content"].get<std::string>();
 
+                        std::size_t jsonStart = responseText.find("[");
+                        std::size_t jsonEnd = responseText.rfind("]");
+
+                        // The AI sometimes likes to not follow directions and add stuff that isn't pure JSON to the top, so we're just gonna start from the brackets.
+                        if (jsonStart != std::string::npos && jsonEnd != std::string::npos) 
+                            responseText = responseText.substr(jsonStart, jsonEnd - jsonStart + 1);
+                        else 
+                        {
+                            std::printf("API response did not contain valid JSON array brackets!\n\n");
+
+                            return callback(generateError("API response did not contain valid JSON array brackets!", drogon::HttpStatusCode::k500InternalServerError));
+                        }
+
                         // Try to parse the input, if it doesn't work, it isn't valid JSON, error.
                         try 
                         {
@@ -113,7 +126,6 @@ void ChatCtrl::asyncHandleHttpRequest(const HttpRequestPtr& request, std::functi
                         catch (const nlohmann::json::parse_error& e) 
                         {
                             std::printf("API returned invalid JSON! %s\n\n", responseText.c_str());
-
                             return callback(generateError("API returned invalid JSON!", drogon::HttpStatusCode::k500InternalServerError));
                         }
 
