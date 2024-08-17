@@ -66,7 +66,6 @@ ninja
 Once the backend is built, it requires a json file path to be passed as a command line argument. This file should contain the necassary configuration settings for Drogon, Groq, and the Database. Here is an example of how it should look like:
 ```json
 {
-{
     "db_clients":
     {
         "default":
